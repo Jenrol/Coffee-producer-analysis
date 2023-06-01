@@ -1,0 +1,213 @@
+---
+title: "coffee producer"
+author: "Abosede"
+date: "04/05/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages("ggplot2")
+install.packages("ggthemes")
+install.packages("dplyr")
+library(ggplot2)
+library(ggthemes)
+library(scales)
+library(dplyr)
+```
+##Introduction
+##Analyses of Coffee producer data in three region, Africa and the middle East, Americas, Asia and Pacific,
+##The data contains information on conventional Production, Organic Production and Area of land covered by each
+#The code below is to detect and list out outliers in the coffee producer organization data,
+```{r}
+rm(list = ls())
+options(scipen = 999) 
+```
+
+```{r}
+# get the working directory or load R-project.
+getwd()
+```
+```{r}
+# Set the working directory or load R-project.
+setwd("C:/users/admin/oneDrive/Desktop/Fairtrade")
+```
+```{r}
+mydata<- read.csv("Producerdata.csv")
+head(mydata)
+summary(mydata)
+```
+##The result above are the initial description ,head function shows  8 variable with 526 observations. and shows that the variables are in character format. For quantitative analysis to be performed the variables have to be converted to numeric
+
+## Converting variables from character to numeric
+```{r}
+mydata$Area.total<- as.numeric(as.character(mydata$Area.total))
+mydata$Area.conventional<- as.numeric(as.character(mydata$Area.conventional))
+mydata$Area.organic<- as.numeric(as.character(mydata$Area.organic))
+mydata$Production.conventional<- as.numeric(as.character(mydata$Production.conventional))
+mydata$Production.Organic<- as.numeric(as.character(mydata$Production.Organic))
+mydata$Production.total<- as.numeric(as.character(mydata$Production.total))
+```
+```{r}
+summary(mydata)
+```
+
+#Determining Outliers
+##Outliers are values that are significantly different or distant  from other values
+##It is determined using boxplot and stats function
+#The box plot show five number summary of a dataset(minimum score, first quartile,median, third quatile and maximum score)
+## the box plot also shows the distribution of the data 
+##Any value outside the whiskers of the box plot is referred to as outliers
+```{r}
+boxplot(mydata$Production.conventional,
+        ylab="Production conventional",col = rainbow(2),notch = TRUE,
+        main="Boxplot of conventional production")
+
+```
+
+```{r}
+boxplot(mydata$Production.Organic,
+        ylab="Production.Orgnic",col = rainbow(2),notch = TRUE,
+        main="Boxplot of organic production")
+```
+
+```{r}
+boxplot(mydata$Production.total,
+        ylab="Production.total",col = rainbow(2),notch = TRUE,
+        main="Boxplot of total production")
+```
+
+
+
+```{r}
+boxplot.stats(mydata$Production.conventional)$out
+
+```
+```{r}
+boxplot.stats(mydata$Production.Organic)$out
+```
+```{r}
+boxplot.stats(mydata$Production.total)$out
+```
+
+
+
+## The boxplot and the stats result shows that their is no outliers in Production organic and total production but their are two outliers in production conventional
+##extracting the row number corresponding to the outliers
+```{r}
+out<-boxplot.stats(mydata$Production.conventional)$out
+out_ind<-which(mydata$Production.conventional%in%c(out))
+out_ind
+```
+```{r}
+mydata[out_ind,]
+```
+```{r}
+boxplot(mydata$Production.conventional,
+        ylab="Production conventional",col = rainbow(2),notch = TRUE)
+
+mtext(paste("Outliers:",paste(out,collapse = ",")))
+```
+##Boxplot was use to detect outliers using information such as  first quartile, third quartile and interquartile range
+##stats function was used to list out the outliers
+#formula
+#IQR=Q3-Q1
+#I=[Q1-1.5*IQR;Q3+1.5*IQR]
+#numbers below the high and low level are referred to as outliers
+
+
+##Question 2
+##The first aggegrate is done without considering outliers
+## Aggregated statistics on production and area of coffee per region
+## The analysis was done using stacked bar chart
+
+##Aggregation of variables by Region
+```{r}
+Aggregate<-mydata%>%
+  group_by(Region)%>%
+  summarise(across(c(Area.total,Area.conventional,Area.organic,
+                     Production.conventional,Production.Organic,Production.total),sum,na.rm=TRUE))
+Aggregate
+```
+```{r}
+Areatotal$AreaOrganic<-mydata%>%
+  group_by(Region)%>%
+  summarize(sum_yield=sum(Area.organic,na.rm = TRUE))
+```
+##Showing aggregate using stacked barchart
+```{r}
+ggplot(Aggregate, aes(x=Area.total,fill=Region))+geom_bar()
+```
+```{r}
+```
+```{r}
+```
+
+
+##Eliminating  outliers 
+# code showing the outliers
+```{r}
+boxplot.stats(mydata$Area.conventional)$out
+```
+##code showing the rows with outliers
+```{r}
+out<-boxplot.stats(mydata$Area.conventional)$out
+out_ind<-which(mydata$Area.conventional%in%c(out))
+out_ind
+```
+
+```{r}
+mydata[out_ind,]
+```
+
+```{r}
+boxplot(mydata$Area.conventional,
+        ylab="Production.conventional")
+mtext(paste("Outliers:",paste(out,collapse = ",")))
+```
+
+```{r}
+boxplot.stats(mydata$Area.organic)$out
+```
+
+```{r}
+boxplot.stats(mydata$Area.total)$out
+```
+```{r}
+
+```
+
+```{r}
+iqr<-IQR(mydata$Production.conventional,na.rm = TRUE)
+up<-quantile(mydata$Production.conventional,na.rm = TRUE,0.75)+1.5*iqr#upper range
+low<-quantile(mydata$Production.conventional,na.rm = TRUE,0.25)-1.5*iqr #Lower range
+
+```
+```{r}
+eliminated<-subset(mydata, mydata$Production.conventional>low & mydata$Production.conventional<up)
+```
+
+```{r}
+Aggregateoutlier<-eliminated%>%
+  group_by(Region)%>%
+  summarise(across(c(Area.total,Area.conventional,Area.organic,
+                     Production.conventional,Production.Organic,Production.total),sum,na.rm=TRUE))
+Aggregateoutlier
+```
+
+
+```{r}
+newdata<-mydata
+newdata$Region<- as.numeric(as.character(newdata$Region))
+newdata$Area.conventional<- as.numeric(as.character(newdata$Area.conventional))
+
+```
+
+```{r}
+dataout<-newdata[!newdata %in% boxplot.stats(newdata)$out]
+```
+
+```
